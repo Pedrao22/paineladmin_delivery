@@ -9,31 +9,45 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const getFullProfile = async (authUser) => {
+    // Tenta via backend primeiro
     try {
       const result = await apiFetch('/auth/me');
       if (result.success) {
         setUser(authUser);
         setProfile(result.data);
         return result.data;
-      } else {
-        throw new Error(result.message || 'Falha ao carregar perfil');
       }
-    } catch (error) {
-      const isAuthError =
-        error.message?.includes('401') ||
-        error.message?.includes('Unauthorized') ||
-        error.message?.includes('JWT');
-
-      if (isAuthError) {
-        setUser(null);
-        setProfile(null);
-        await supabase.auth.signOut();
-      } else {
-        console.warn('Backend indisponível:', error.message);
-        setUser(authUser);
-      }
-      return null;
+    } catch (backendError) {
+      console.warn('Backend indisponível, usando Supabase direto:', backendError.message);
     }
+
+    // Fallback: lê perfil direto do Supabase (não depende do backend)
+    try {
+      const { data: usuario, error } = await supabase
+        .from('usuarios')
+        .select('id, auth_id, nome, email, role, restaurante_id, avatar_url, ativo, ultimo_login')
+        .eq('auth_id', authUser.id)
+        .eq('ativo', true)
+        .single();
+
+      if (!error && usuario) {
+        const profileData = {
+          ...usuario,
+          restauranteId: usuario.restaurante_id,
+          forcarTrocaSenha: usuario.avatar_url === 'FORCE_RESET',
+        };
+        setUser(authUser);
+        setProfile(profileData);
+        return profileData;
+      }
+    } catch (supabaseError) {
+      console.warn('Falha no fallback Supabase:', supabaseError.message);
+    }
+
+    setUser(null);
+    setProfile(null);
+    await supabase.auth.signOut();
+    return null;
   };
 
   useEffect(() => {
