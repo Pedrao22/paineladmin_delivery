@@ -35,6 +35,8 @@ export default function SuperLoginPage() {
       setError(
         err.message?.includes('Invalid login credentials')
           ? 'E-mail ou senha incorretos.'
+          : err.message?.includes('demorou')
+          ? 'O servidor está acordando (cold start). Aguarde 30s e tente novamente.'
           : `Erro: ${err.message || 'Falha de rede.'}`
       );
     } finally {

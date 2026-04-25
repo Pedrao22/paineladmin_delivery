@@ -25,20 +25,31 @@ export async function apiFetch(path, options = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
 
-  const data = await response.json();
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(data.message || 'Erro na requisição');
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro na requisição');
+    }
+
+    return data;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Servidor demorou para responder. Tente novamente.');
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-
-  return data;
 }
