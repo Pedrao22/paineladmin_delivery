@@ -1,0 +1,211 @@
+.super-login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary);
+  font-family: var(--font-family);
+  color: var(--text-primary);
+}
+
+.solar-night-bg {
+  background-image: var(--bg-glow);
+}
+
+.aurora-glow {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 70% 70%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 32px;
+  padding: 48px;
+  width: 100%;
+  max-width: 440px;
+  z-index: 1;
+  box-shadow: var(--glass-glow);
+  position: relative;
+}
+
+.super-logo-premium {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.logo-spark {
+  color: var(--accent);
+  filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.6));
+}
+
+.logo-text {
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.logo-text span {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.2em;
+  margin-top: 4px;
+}
+
+.super-login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.super-login-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.reset-alert-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+
+/* Inputs Premium */
+.input-group-premium {
+  margin-bottom: 24px;
+}
+
+.input-group-premium label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  margin-left: 4px;
+}
+
+.input-wrapper-premium {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--text-tertiary);
+  transition: color 0.2s;
+}
+
+.input-wrapper-premium input {
+  width: 100%;
+  padding: 14px 16px 14px 48px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  color: white;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper-premium input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.input-wrapper-premium input:focus + .input-icon {
+  color: var(--accent);
+}
+
+/* Buttons Premium */
+.super-action-btn-premium {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent-gradient);
+  border-radius: 18px;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 32px;
+  box-shadow: 0 12px 24px -8px rgba(99, 102, 241, 0.5);
+}
+
+.super-action-btn-premium:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 32px -8px rgba(99, 102, 241, 0.6);
+  filter: brightness(1.1);
+}
+
+/* Error/Success alerts */
+.super-error-alert {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 12px 16px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.success-icon-container {
+  width: 80px;
+  height: 80px;
+  background: rgba(52, 211, 153, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 32px;
+}
+
+.text-success { color: #34d399; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
