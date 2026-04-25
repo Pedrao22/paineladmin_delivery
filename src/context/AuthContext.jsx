@@ -3,76 +3,62 @@ import { supabase, apiFetch } from '../lib/supabase';
 
 const AuthContext = createContext({});
 
+const fetchProfileFromSupabase = async (authUserId) => {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, auth_id, nome, email, role, restaurante_id, avatar_url, ativo')
+    .eq('auth_id', authUserId)
+    .eq('ativo', true)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    ...data,
+    restauranteId: data.restaurante_id,
+    forcarTrocaSenha: data.avatar_url === 'FORCE_RESET',
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const getFullProfile = async (authUser) => {
-    // Tenta via backend primeiro
-    try {
-      const result = await apiFetch('/auth/me');
-      if (result.success) {
-        setUser(authUser);
-        setProfile(result.data);
-        return result.data;
-      }
-    } catch (backendError) {
-      console.warn('Backend indisponível, usando Supabase direto:', backendError.message);
-    }
-
-    // Fallback: lê perfil direto do Supabase (não depende do backend)
-    try {
-      const { data: usuario, error } = await supabase
-        .from('usuarios')
-        .select('id, auth_id, nome, email, role, restaurante_id, avatar_url, ativo, ultimo_login')
-        .eq('auth_id', authUser.id)
-        .eq('ativo', true)
-        .single();
-
-      if (!error && usuario) {
-        const profileData = {
-          ...usuario,
-          restauranteId: usuario.restaurante_id,
-          forcarTrocaSenha: usuario.avatar_url === 'FORCE_RESET',
-        };
-        setUser(authUser);
-        setProfile(profileData);
-        return profileData;
-      }
-    } catch (supabaseError) {
-      console.warn('Falha no fallback Supabase:', supabaseError.message);
-    }
-
-    setUser(null);
-    setProfile(null);
-    await supabase.auth.signOut();
-    return null;
-  };
-
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 5000);
+    const timeout = setTimeout(() => setLoading(false), 6000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (
-          session &&
-          (event === 'INITIAL_SESSION' ||
-            event === 'SIGNED_IN' ||
-            event === 'TOKEN_REFRESHED')
-        ) {
-          await getFullProfile(session.user);
-        } else if (
-          event === 'SIGNED_OUT' ||
-          (event === 'INITIAL_SESSION' && !session)
-        ) {
+        if (event === 'INITIAL_SESSION') {
+          if (session?.user) {
+            const profileData = await fetchProfileFromSupabase(session.user.id);
+            if (profileData) {
+              setUser(session.user);
+              setProfile(profileData);
+            } else {
+              setUser(null);
+              setProfile(null);
+            }
+          } else {
+            setUser(null);
+            setProfile(null);
+          }
+          clearTimeout(timeout);
+          setLoading(false);
+        }
+
+        if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
         }
 
-        if (event === 'INITIAL_SESSION') {
-          clearTimeout(timeout);
-          setLoading(false);
+        if (event === 'TOKEN_REFRESHED' && session?.user) {
+          const profileData = await fetchProfileFromSupabase(session.user.id);
+          if (profileData) {
+            setUser(session.user);
+            setProfile(profileData);
+          }
         }
       }
     );
@@ -83,20 +69,34 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  const refreshProfile = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) await getFullProfile(session.user);
-  };
-
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    const profileData = await getFullProfile(data.user);
+
+    const profileData = await fetchProfileFromSupabase(data.user.id);
+
+    if (!profileData) {
+      await supabase.auth.signOut();
+      throw new Error('Usuário não encontrado ou inativo.');
+    }
+
+    setUser(data.user);
+    setProfile(profileData);
     return { ...data, profileData };
   };
 
   const logout = async () => {
     await supabase.auth.signOut();
+  };
+
+  const refreshProfile = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const profileData = await fetchProfileFromSupabase(session.user.id);
+    if (profileData) {
+      setUser(session.user);
+      setProfile(profileData);
+    }
   };
 
   return (
