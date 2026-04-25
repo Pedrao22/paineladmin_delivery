@@ -37,6 +37,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const timeout = setTimeout(() => setLoading(false), 5000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (
@@ -55,12 +57,16 @@ export const AuthProvider = ({ children }) => {
         }
 
         if (event === 'INITIAL_SESSION') {
+          clearTimeout(timeout);
           setLoading(false);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const refreshProfile = async () => {
@@ -81,7 +87,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, login, logout, refreshProfile }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
