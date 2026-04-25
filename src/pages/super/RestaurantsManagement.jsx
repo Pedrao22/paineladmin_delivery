@@ -437,8 +437,8 @@ const RestaurantsManagement = () => {
                     {MAIN_APP_URL && (
                       <a
                         className="action-btn"
-                        title="Abrir painel do restaurante"
-                        href={MAIN_APP_URL}
+                        title="Ver painel do restaurante"
+                        href={`${MAIN_APP_URL}?impersonate=${res.id}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}

@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle, Loader2, Zap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../lib/supabase';
 import './SuperLoginPage.css';
 
 export default function SuperLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Acorda o backend silenciosamente ao abrir a página de login
+  useEffect(() => {
+    fetch(`${API_URL}/auth/me`).catch(() => {});
+  }, []);
   const [error, setError] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
