@@ -47,8 +47,8 @@ const AuditHistory = () => {
 
   useEffect(() => {
     apiFetch('/restaurants?limit=100').then(res => {
-      const list = res?.success ? (res.data?.data || res.data) : (Array.isArray(res) ? res : []);
-      setRestaurants(list || []);
+      const raw = res?.data?.data ?? res?.data ?? res;
+      setRestaurants(Array.isArray(raw) ? raw : []);
     }).catch(() => {});
   }, []);
 
@@ -64,12 +64,14 @@ const AuditHistory = () => {
       if (filters.dataFim) params.append('data_fim', filters.dataFim + 'T23:59:59');
 
       const res = await apiFetch(`/audit?${params}`);
-      if (res?.data) {
-        setLogs(res.data);
-        setTotal(res.total || res.data.length);
-      }
+      const raw   = res?.data?.data ?? res?.data ?? [];
+      const list  = Array.isArray(raw) ? raw : [];
+      const count = res?.data?.total ?? res?.total ?? list.length;
+      setLogs(list);
+      setTotal(count);
     } catch (err) {
       console.error('Erro ao buscar logs:', err);
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -241,7 +243,7 @@ const AuditHistory = () => {
                 className="bg-white/5 border border-white/10 rounded-xl pl-8 pr-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-purple-500/30 cursor-pointer hover:bg-white/8 transition-all max-w-[180px]"
               >
                 <option value="">Todos restaurantes</option>
-                {restaurants.map(r => (
+                {(Array.isArray(restaurants) ? restaurants : []).map(r => (
                   <option key={r.id} value={r.id}>{r.nome}</option>
                 ))}
               </select>
@@ -318,7 +320,7 @@ const AuditHistory = () => {
                     Nenhum registro para os filtros selecionados.
                   </td>
                 </tr>
-              ) : logs.map((log) => (
+              ) : (Array.isArray(logs) ? logs : []).map((log) => (
                 <tr key={log.id} className="hover:bg-white/[0.025] transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
