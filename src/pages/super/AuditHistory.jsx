@@ -3,17 +3,18 @@ import {
   History, User, Building2, Clock, Info, Activity, X,
   Calendar, Database, RefreshCw, Filter, Plus, Pencil,
   Trash2, LogIn, LogOut, Eye, Zap, ChevronLeft, ChevronRight,
-  ShieldCheck
+  ShieldCheck, AlertOctagon
 } from 'lucide-react';
 import { apiFetch } from '../../lib/supabase';
 
 const ACTION_META = {
-  create:      { label: 'Criação',       color: '#10b981', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)', Icon: Plus },
-  update:      { label: 'Alteração',     color: '#38bdf8', bg: 'rgba(56,189,248,0.1)',  border: 'rgba(56,189,248,0.25)', Icon: Pencil },
-  delete:      { label: 'Exclusão',      color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)', Icon: Trash2 },
-  impersonate: { label: 'Suporte',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', border: 'rgba(192,132,252,0.3)', Icon: Eye },
-  login:       { label: 'Login',         color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.25)', Icon: LogIn },
-  logout:      { label: 'Logout',        color: '#94a3b8', bg: 'rgba(148,163,184,0.08)',border: 'rgba(148,163,184,0.2)', Icon: LogOut },
+  create:       { label: 'Criação',       color: '#10b981', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)', Icon: Plus },
+  update:       { label: 'Alteração',     color: '#38bdf8', bg: 'rgba(56,189,248,0.1)',  border: 'rgba(56,189,248,0.25)', Icon: Pencil },
+  delete:       { label: 'Exclusão',      color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)', Icon: Trash2 },
+  impersonate:  { label: 'Suporte',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', border: 'rgba(192,132,252,0.3)', Icon: Eye },
+  login:        { label: 'Login',         color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.25)', Icon: LogIn },
+  logout:       { label: 'Logout',        color: '#94a3b8', bg: 'rgba(148,163,184,0.08)',border: 'rgba(148,163,184,0.2)', Icon: LogOut },
+  client_error: { label: 'Bug do Client', color: '#fb923c', bg: 'rgba(251,146,60,0.1)',  border: 'rgba(251,146,60,0.25)', Icon: AlertOctagon },
 };
 
 const getActionMeta = (action) => {
@@ -96,7 +97,7 @@ const AuditHistory = () => {
   const [filters, setFilters] = useState({ page: 1, limit: 15, acao: '', restauranteId: '', usuarioNome: '', dataInicio: '', dataFim: '' });
   const [total, setTotal] = useState(0);
   const [detailLog, setDetailLog] = useState(null);
-  const [actionCounts, setActionCounts] = useState({ creates: 0, updates: 0, deletes: 0 });
+  const [actionCounts, setActionCounts] = useState({ creates: 0, updates: 0, deletes: 0, bugs: 0 });
 
   useEffect(() => {
     apiFetch('/restaurants?limit=100').then(res => {
@@ -126,6 +127,7 @@ const AuditHistory = () => {
         creates: list.filter(l => (l.acao||'').toLowerCase().includes('create')).length,
         updates: list.filter(l => (l.acao||'').toLowerCase().includes('update')).length,
         deletes: list.filter(l => (l.acao||'').toLowerCase().includes('delete')).length,
+        bugs:    list.filter(l => l.acao === 'client_error').length,
       });
     } catch {
       setLogs([]);
@@ -283,10 +285,10 @@ const AuditHistory = () => {
 
       {/* ── Stats ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <StatCard icon={Activity} label="Total de eventos" value={total} theme="purple" />
-        <StatCard icon={Plus}     label="Criações (pág.)"  value={actionCounts.creates} theme="emerald" />
-        <StatCard icon={Pencil}   label="Alterações (pág.)"value={actionCounts.updates} theme="sky" />
-        <StatCard icon={Trash2}   label="Exclusões (pág.)" value={actionCounts.deletes} theme="rose" />
+        <StatCard icon={Activity}     label="Total de eventos"  value={total}                theme="purple" />
+        <StatCard icon={Plus}         label="Criações (pág.)"   value={actionCounts.creates} theme="emerald" />
+        <StatCard icon={Pencil}       label="Alterações (pág.)" value={actionCounts.updates} theme="sky" />
+        <StatCard icon={AlertOctagon} label="Bugs do client"    value={actionCounts.bugs}    theme="rose" />
       </div>
 
       {/* ── Main card ── */}
@@ -306,6 +308,7 @@ const AuditHistory = () => {
             <option value="impersonate">Suporte</option>
             <option value="login">Login</option>
             <option value="logout">Logout</option>
+            <option value="client_error">Bugs do client</option>
           </select>
 
           <select value={filters.restauranteId} onChange={e => setFilters({ ...filters, restauranteId: e.target.value, page: 1 })} style={{ ...inputStyle, maxWidth: 180 }}>
