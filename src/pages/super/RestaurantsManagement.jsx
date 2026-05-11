@@ -14,7 +14,7 @@ const EMPTY_FORM = {
   admin_nome: '', admin_email: '', admin_password: '', plano_id: ''
 };
 
-const EMPTY_EDIT = { nome: '', cnpj: '', email: '', telefone: '', status: 'active' };
+const EMPTY_EDIT = { nome: '', cnpj: '', email: '', telefone: '', status: 'active', chatwoot_inbox_id: '' };
 
 const RestaurantsManagement = () => {
   const [restaurants, setRestaurants] = useState([]);
@@ -162,6 +162,7 @@ const RestaurantsManagement = () => {
       email: res.email || '',
       telefone: res.telefone || '',
       status: res.status || 'active',
+      chatwoot_inbox_id: res.chatwoot_inbox_id ?? '',
     });
     setIsEditOpen(true);
   };
@@ -170,9 +171,13 @@ const RestaurantsManagement = () => {
     e.preventDefault();
     setEditSubmitting(true);
     try {
+      const payload = {
+        ...editData,
+        chatwoot_inbox_id: editData.chatwoot_inbox_id !== '' ? Number(editData.chatwoot_inbox_id) : null,
+      };
       const res = await apiFetch(`/restaurants/${editingId}`, {
         method: 'PUT',
-        body: JSON.stringify(editData)
+        body: JSON.stringify(payload)
       });
       if (res?.success) {
         setIsEditOpen(false);
@@ -360,6 +365,23 @@ const RestaurantsManagement = () => {
                   </div>
                 </div>
               </div>
+              <div className="form-section">
+                <h4>Integração WhatsApp</h4>
+                <div className="form-grid">
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>ID da Inbox no Chatwoot (Uply.chat)</label>
+                    <input
+                      type="number"
+                      placeholder="Ex: 30419 — deixe vazio se ainda não conectado"
+                      value={editData.chatwoot_inbox_id}
+                      onChange={e => setEditData({ ...editData, chatwoot_inbox_id: e.target.value })}
+                    />
+                    <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: 4, display: 'block' }}>
+                      Após o restaurante escanear o QR no Uply.chat, copie o ID da inbox aqui para ativar o chat.
+                    </small>
+                  </div>
+                </div>
+              </div>
               <div className="modal-footer">
                 <button type="button" className="cancel-btn" onClick={() => setIsEditOpen(false)}>Cancelar</button>
                 <button type="submit" className="confirm-btn" disabled={editSubmitting}>
@@ -380,7 +402,7 @@ const RestaurantsManagement = () => {
               <th>Restaurante</th>
               <th>Plano</th>
               <th>Status</th>
-              <th>CNPJ</th>
+              <th>WhatsApp</th>
               <th>Usuários</th>
               <th>Criado em</th>
               <th className="text-right">Ações</th>
@@ -414,7 +436,19 @@ const RestaurantsManagement = () => {
                     {res.status === 'active' ? 'Ativo' : res.status === 'inactive' ? 'Inativo' : 'Suspenso'}
                   </span>
                 </td>
-                <td className="font-mono">{res.cnpj || '—'}</td>
+                <td>
+                  {res.chatwoot_inbox_id ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', fontWeight: 700, color: '#25d366' }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#25d366', display: 'inline-block' }} />
+                      Conectado
+                    </span>
+                  ) : (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }} />
+                      Pendente
+                    </span>
+                  )}
+                </td>
                 <td>
                   <div className="users-stack">
                     <Users size={16} />
