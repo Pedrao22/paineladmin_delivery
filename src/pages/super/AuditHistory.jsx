@@ -93,7 +93,7 @@ const AuditHistory = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState([]);
-  const [filters, setFilters] = useState({ page: 1, limit: 15, acao: '', restauranteId: '', dataInicio: '', dataFim: '' });
+  const [filters, setFilters] = useState({ page: 1, limit: 15, acao: '', restauranteId: '', usuarioNome: '', dataInicio: '', dataFim: '' });
   const [total, setTotal] = useState(0);
   const [detailLog, setDetailLog] = useState(null);
   const [actionCounts, setActionCounts] = useState({ creates: 0, updates: 0, deletes: 0 });
@@ -113,6 +113,7 @@ const AuditHistory = () => {
       const params = new URLSearchParams({ page: filters.page, limit: filters.limit });
       if (filters.acao) params.append('acao', filters.acao);
       if (filters.restauranteId) params.append('restaurante_id', filters.restauranteId);
+      if (filters.usuarioNome) params.append('usuario_nome', filters.usuarioNome);
       if (filters.dataInicio) params.append('data_inicio', filters.dataInicio);
       if (filters.dataFim) params.append('data_fim', filters.dataFim + 'T23:59:59');
       const res = await apiFetch(`/audit?${params}`);
@@ -139,8 +140,8 @@ const AuditHistory = () => {
     return r?.nome || id.slice(0, 8) + '…';
   };
 
-  const clearFilters = () => setFilters({ page: 1, limit: 15, acao: '', restauranteId: '', dataInicio: '', dataFim: '' });
-  const hasFilters = filters.acao || filters.restauranteId || filters.dataInicio || filters.dataFim;
+  const clearFilters = () => setFilters({ page: 1, limit: 15, acao: '', restauranteId: '', usuarioNome: '', dataInicio: '', dataFim: '' });
+  const hasFilters = filters.acao || filters.restauranteId || filters.usuarioNome || filters.dataInicio || filters.dataFim;
   const totalPages = Math.ceil(total / filters.limit);
 
   const inputStyle = {
@@ -313,6 +314,17 @@ const AuditHistory = () => {
               <option key={r.id} value={r.id}>{r.nome}</option>
             ))}
           </select>
+
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <User size={13} color="#475569" style={{ position: 'absolute', left: 10, pointerEvents: 'none' }} />
+            <input
+              type="text"
+              placeholder="Buscar usuário..."
+              value={filters.usuarioNome}
+              onChange={e => setFilters({ ...filters, usuarioNome: e.target.value, page: 1 })}
+              style={{ ...inputStyle, paddingLeft: 30, width: 160 }}
+            />
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={13} color="#475569" />
