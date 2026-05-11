@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Plus, Search, Filter, MoreVertical, Power, PowerOff, Edit2, ExternalLink,
-  ChevronLeft, ChevronRight, TrendingUp, Activity, Users, AlertTriangle,
-  CheckCircle2, Store, X, Trash2, ShieldAlert, Save
+  Plus, Search, Power, PowerOff, Edit2, ExternalLink,
+  ChevronLeft, ChevronRight, Activity, X, Trash2, ShieldAlert,
+  Save, Store, CheckCircle2, AlertTriangle, Zap, Calendar,
+  MessageSquare, MoreVertical, Globe,
 } from 'lucide-react';
 import { apiFetch } from '../../lib/supabase';
 import './RestaurantsManagement.css';
@@ -11,10 +12,28 @@ const MAIN_APP_URL = import.meta.env.VITE_MAIN_APP_URL || '';
 
 const EMPTY_FORM = {
   nome: '', cnpj: '', email: '', telefone: '',
-  admin_nome: '', admin_email: '', admin_password: '', plano_id: ''
+  admin_nome: '', admin_email: '', admin_password: '', plano_id: '',
+};
+const EMPTY_EDIT = { nome: '', cnpj: '', email: '', telefone: '', status: 'active', chatwoot_inbox_id: '' };
+
+const statusMeta = {
+  active:    { label: 'Ativo',    cls: 'active' },
+  inactive:  { label: 'Inativo',  cls: 'inactive' },
+  suspended: { label: 'Suspenso', cls: 'suspended' },
 };
 
-const EMPTY_EDIT = { nome: '', cnpj: '', email: '', telefone: '', status: 'active', chatwoot_inbox_id: '' };
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function colorFromString(str) {
+  if (!str) return '#6366f1';
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  const hue = Math.abs(h) % 360;
+  return `hsl(${hue}, 65%, 55%)`;
+}
 
 const RestaurantsManagement = () => {
   const [restaurants, setRestaurants] = useState([]);
@@ -27,37 +46,25 @@ const RestaurantsManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
-  // Modal criar
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [plans, setPlans] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Modal editar
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState(EMPTY_EDIT);
   const [editSubmitting, setEditSubmitting] = useState(false);
 
-  // Debounce na busca
   useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 400);
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 400);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    fetchData();
-  }, [page, filter, debouncedSearch]);
+  useEffect(() => { fetchData(); }, [page, filter, debouncedSearch]);
+  useEffect(() => { fetchPlans(); }, []);
 
-  useEffect(() => {
-    fetchPlans();
-  }, []);
-
-  // Fecha dropdown ao clicar fora
   useEffect(() => {
     const handleClick = () => setOpenDropdownId(null);
     document.addEventListener('click', handleClick);
@@ -76,7 +83,7 @@ const RestaurantsManagement = () => {
       const statsRes = await apiFetch('/restaurants/stats');
       if (statsRes?.success) setStats(statsRes.data);
 
-      const params = new URLSearchParams({ page, limit: 10 });
+      const params = new URLSearchParams({ page, limit: 12 });
       if (filter !== 'all') params.append('status', filter);
       if (debouncedSearch) params.append('search', debouncedSearch);
 
@@ -94,163 +101,215 @@ const RestaurantsManagement = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
-    setFormError('');
+    setSubmitting(true); setFormError('');
     try {
-      const res = await apiFetch('/restaurants', {
-        method: 'POST',
-        body: JSON.stringify(formData)
-      });
-      if (res?.success) {
-        setIsModalOpen(false);
-        setFormData(EMPTY_FORM);
-        fetchData();
-      } else {
-        setFormError(res?.message || 'Erro ao criar restaurante.');
-      }
-    } catch (err) {
-      setFormError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+      const res = await apiFetch('/restaurants', { method: 'POST', body: JSON.stringify(formData) });
+      if (res?.success) { setIsModalOpen(false); setFormData(EMPTY_FORM); fetchData(); }
+      else setFormError(res?.message || 'Erro ao criar restaurante.');
+    } catch (err) { setFormError(err.message); }
+    finally { setSubmitting(false); }
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     try {
       const res = await apiFetch(`/restaurants/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: newStatus })
+        method: 'PATCH', body: JSON.stringify({ status: newStatus }),
       });
-      if (res?.success) {
-        setRestaurants(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
-        fetchData();
-      }
-    } catch (err) {
-      console.error('Erro ao alterar status:', err);
-    }
+      if (res?.success) fetchData();
+    } catch {}
   };
 
   const handleSuspend = async (id) => {
     if (!window.confirm('Suspender este restaurante? O acesso ao painel será bloqueado.')) return;
     try {
-      const res = await apiFetch(`/restaurants/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'suspended' })
-      });
+      const res = await apiFetch(`/restaurants/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'suspended' }) });
       if (res?.success) fetchData();
-    } catch (err) {
-      console.error('Erro ao suspender:', err);
-    }
+    } catch {}
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Excluir permanentemente este restaurante? Esta ação não pode ser desfeita.')) return;
+    if (!window.confirm('Excluir permanentemente? Esta ação não pode ser desfeita.')) return;
     try {
       const res = await apiFetch(`/restaurants/${id}`, { method: 'DELETE' });
       if (res?.success) fetchData();
-    } catch (err) {
-      console.error('Erro ao excluir:', err);
-    }
+    } catch {}
   };
 
   const openEdit = (res) => {
     setEditingId(res.id);
-    setEditData({
-      nome: res.nome || '',
-      cnpj: res.cnpj || '',
-      email: res.email || '',
-      telefone: res.telefone || '',
-      status: res.status || 'active',
-      chatwoot_inbox_id: res.chatwoot_inbox_id ?? '',
-    });
+    setEditData({ nome: res.nome || '', cnpj: res.cnpj || '', email: res.email || '', telefone: res.telefone || '', status: res.status || 'active', chatwoot_inbox_id: res.chatwoot_inbox_id ?? '' });
     setIsEditOpen(true);
   };
 
   const handleEdit = async (e) => {
-    e.preventDefault();
-    setEditSubmitting(true);
+    e.preventDefault(); setEditSubmitting(true);
     try {
-      const payload = {
-        ...editData,
-        chatwoot_inbox_id: editData.chatwoot_inbox_id !== '' ? Number(editData.chatwoot_inbox_id) : null,
-      };
-      const res = await apiFetch(`/restaurants/${editingId}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload)
-      });
-      if (res?.success) {
-        setIsEditOpen(false);
-        fetchData();
-      }
-    } catch (err) {
-      console.error('Erro ao editar:', err);
-    } finally {
-      setEditSubmitting(false);
-    }
+      const payload = { ...editData, chatwoot_inbox_id: editData.chatwoot_inbox_id !== '' ? Number(editData.chatwoot_inbox_id) : null };
+      const res = await apiFetch(`/restaurants/${editingId}`, { method: 'PUT', body: JSON.stringify(payload) });
+      if (res?.success) { setIsEditOpen(false); fetchData(); }
+    } catch {}
+    finally { setEditSubmitting(false); }
   };
 
   return (
     <div className="res-mgmt-container">
-      {/* Stats */}
-      <div className="super-stats-grid">
-        <div className="super-stat-card">
-          <div className="stat-icon-wrapper blue"><Store size={24} /></div>
-          <div className="stat-content">
-            <p className="stat-label">Total de Restaurantes</p>
-            <h3 className="stat-value">{stats.total}</h3>
+
+      {/* ── Stats ── */}
+      <div className="res-stats-grid">
+        {[
+          { icon: Store,        label: 'Total na rede',    value: stats.total,   sub: 'estabelecimentos', cls: 'blue',   glow: 'radial-gradient(ellipse at top left, rgba(59,130,246,0.08), transparent 70%)' },
+          { icon: CheckCircle2, label: 'Ativos agora',     value: stats.ativos,  sub: 'operando normalmente', cls: 'green', glow: 'radial-gradient(ellipse at top left, rgba(34,197,94,0.08), transparent 70%)' },
+          { icon: AlertTriangle,label: 'Suspensos/Inativos',value: stats.suspensos + stats.inativos, sub: 'requerem atenção', cls: 'amber', glow: 'radial-gradient(ellipse at top left, rgba(245,158,11,0.08), transparent 70%)' },
+          { icon: Activity,     label: 'Taxa de ativação', value: stats.total > 0 ? `${Math.round((stats.ativos / stats.total) * 100)}%` : '—', sub: 'dos restaurantes ativos', cls: 'indigo', glow: 'radial-gradient(ellipse at top left, rgba(99,102,241,0.08), transparent 70%)' },
+        ].map(({ icon: Icon, label, value, sub, cls, glow }) => (
+          <div key={label} className="res-stat-card" style={{ '--sc-glow': glow }}>
+            <div className={`res-stat-icon ${cls}`}><Icon size={20} /></div>
+            <p className="res-stat-label">{label}</p>
+            <p className="res-stat-value">{value}</p>
+            <p className="res-stat-sub">{sub}</p>
           </div>
-          <div className="stat-badge positive"><TrendingUp size={14} /><span>rede</span></div>
-        </div>
-        <div className="super-stat-card">
-          <div className="stat-icon-wrapper green"><CheckCircle2 size={24} /></div>
-          <div className="stat-content">
-            <p className="stat-label">Ativos</p>
-            <h3 className="stat-value">{stats.ativos}</h3>
-          </div>
-        </div>
-        <div className="super-stat-card">
-          <div className="stat-icon-wrapper orange"><AlertTriangle size={24} /></div>
-          <div className="stat-content">
-            <p className="stat-label">Suspensos / Inativos</p>
-            <h3 className="stat-value">{stats.suspensos + stats.inativos}</h3>
-          </div>
-        </div>
-        <div className="super-stat-card">
-          <div className="stat-icon-wrapper indigo"><Activity size={24} /></div>
-          <div className="stat-content">
-            <p className="stat-label">Taxa de Ativação</p>
-            <h3 className="stat-value">{stats.total > 0 ? Math.round((stats.ativos / stats.total) * 100) : 0}%</h3>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Control Bar */}
-      <div className="res-control-bar">
-        <div className="search-box">
-          <Search size={18} className="search-icon" />
+      {/* ── Toolbar ── */}
+      <div className="res-toolbar">
+        <div className="res-search-wrap">
+          <Search size={15} />
           <input
-            type="text"
-            placeholder="Buscar por nome, CNPJ ou email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            type="text" placeholder="Buscar por nome, e-mail ou CNPJ..."
+            value={search} onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <div className="filter-group">
-          <button className="icon-btn"><Filter size={18} /></button>
-          <select value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }}>
-            <option value="all">Todos os Status</option>
-            <option value="active">Ativos</option>
-            <option value="inactive">Inativos</option>
-            <option value="suspended">Suspensos</option>
-          </select>
-          <button className="create-res-btn" onClick={() => setIsModalOpen(true)}>
-            <Plus size={18} /><span>Novo Restaurante</span>
-          </button>
-        </div>
+        <select className="res-select" value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}>
+          <option value="all">Todos os status</option>
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+          <option value="suspended">Suspensos</option>
+        </select>
+        <button className="res-create-btn" onClick={() => setIsModalOpen(true)}>
+          <Plus size={16} /> Novo Restaurante
+        </button>
       </div>
 
-      {/* Modal Criar */}
+      {/* ── Card Grid ── */}
+      <div className="res-grid">
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="res-card" style={{ opacity: 0.4, pointerEvents: 'none' }}>
+              <div className="res-card-accent" style={{ background: '#1e293b' }} />
+              <div className="res-card-body">
+                <div className="res-card-header">
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#1e293b' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ height: 14, background: '#1e293b', borderRadius: 6, marginBottom: 8, width: '70%' }} />
+                    <div style={{ height: 11, background: '#1e293b', borderRadius: 4, width: '50%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : restaurants.length === 0 ? (
+          <div className="res-empty-state">
+            <Store size={36} color="#1e293b" />
+            <p>Nenhum restaurante encontrado.</p>
+          </div>
+        ) : restaurants.map(res => {
+          const color = res.cor_primaria || colorFromString(res.nome);
+          const sm = statusMeta[res.status] || statusMeta.inactive;
+          return (
+            <div key={res.id} className="res-card" style={{ '--rc-color': color }}>
+              <div className="res-card-accent" />
+              <div className="res-card-body">
+                <div className="res-card-header">
+                  <div className="res-card-avatar" style={{ background: color }}>
+                    {(res.nome || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="res-card-info">
+                    <p className="res-card-name">{res.nome}</p>
+                    <p className="res-card-email">{res.email}</p>
+                  </div>
+                </div>
+
+                <div className="res-card-tags">
+                  <span className={`rc-badge ${sm.cls}`}>
+                    <span className="rc-dot" />{sm.label}
+                  </span>
+                  {res.planos?.nome ? (
+                    <span className="rc-plan"><Zap size={10} />{res.planos.nome}</span>
+                  ) : (
+                    <span className="rc-plan none">Sem plano</span>
+                  )}
+                  {res.chatwoot_inbox_id ? (
+                    <span className="rc-wa"><MessageSquare size={10} />WhatsApp</span>
+                  ) : (
+                    <span className="rc-wa pending"><MessageSquare size={10} />Pendente</span>
+                  )}
+                </div>
+
+                <div className="res-card-meta">
+                  <span><Calendar size={11} />{formatDate(res.criado_em)}</span>
+                  {res.slug && <span><Globe size={11} />{res.slug}</span>}
+                </div>
+              </div>
+
+              <div className="res-card-footer">
+                <div style={{ fontSize: '0.72rem', color: '#334155' }}>
+                  ID: <span style={{ fontFamily: 'monospace', color: '#475569' }}>{res.id.slice(0, 8)}…</span>
+                </div>
+                <div className="res-card-actions">
+                  <button
+                    className={`rca-btn ${res.status === 'active' ? 'deactivate' : 'activate'}`}
+                    onClick={() => handleToggleStatus(res.id, res.status)}
+                    title={res.status === 'active' ? 'Desativar' : 'Ativar'}
+                  >
+                    {res.status === 'active' ? <PowerOff size={14} /> : <Power size={14} />}
+                  </button>
+                  <button className="rca-btn edit" title="Editar" onClick={() => openEdit(res)}>
+                    <Edit2 size={14} />
+                  </button>
+                  {MAIN_APP_URL && (
+                    <a className="rca-btn" title="Ver painel" href={`${MAIN_APP_URL}?impersonate=${res.id}`} target="_blank" rel="noreferrer">
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+                  <div className="rca-dropdown">
+                    <button className="rca-btn" title="Mais" onClick={e => { e.stopPropagation(); setOpenDropdownId(openDropdownId === res.id ? null : res.id); }}>
+                      <MoreVertical size={14} />
+                    </button>
+                    {openDropdownId === res.id && (
+                      <div className="rca-dropdown-menu" onClick={e => e.stopPropagation()}>
+                        <button className="rca-dropdown-item warn" onClick={() => { handleSuspend(res.id); setOpenDropdownId(null); }}>
+                          <ShieldAlert size={14} /> Suspender acesso
+                        </button>
+                        <div className="rca-dropdown-divider" />
+                        <button className="rca-dropdown-item danger" onClick={() => { handleDelete(res.id); setOpenDropdownId(null); }}>
+                          <Trash2 size={14} /> Excluir permanentemente
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Pagination ── */}
+      {totalPages > 1 && (
+        <div className="res-pagination">
+          <button className="res-pag-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+            <ChevronLeft size={15} /> Anterior
+          </button>
+          <span className="res-pag-info">Página <b>{page}</b> de <b>{totalPages}</b></span>
+          <button className="res-pag-btn" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
+            Próxima <ChevronRight size={15} />
+          </button>
+        </div>
+      )}
+
+      {/* ── Modal Criar ── */}
       {isModalOpen && (
         <div className="super-modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="super-modal-card" onClick={e => e.stopPropagation()}>
@@ -259,11 +318,7 @@ const RestaurantsManagement = () => {
               <p>O restaurante receberá um acesso administrativo automático.</p>
             </div>
             <form onSubmit={handleCreate} className="modal-form">
-              {formError && (
-                <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', padding: '12px 16px', borderRadius: '10px', marginBottom: '16px', fontSize: '0.85rem' }}>
-                  {formError}
-                </div>
-              )}
+              {formError && <div className="form-error">{formError}</div>}
               <div className="form-section">
                 <h4>Dados do Negócio</h4>
                 <div className="form-grid">
@@ -283,7 +338,7 @@ const RestaurantsManagement = () => {
                     <label>Telefone</label>
                     <input type="tel" placeholder="(00) 00000-0000" value={formData.telefone} onChange={e => setFormData({ ...formData, telefone: e.target.value })} />
                   </div>
-                  <div className="form-group">
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label>Plano Inicial</label>
                     <select value={formData.plano_id} onChange={e => setFormData({ ...formData, plano_id: e.target.value })}>
                       <option value="">Selecione um plano</option>
@@ -303,7 +358,7 @@ const RestaurantsManagement = () => {
                     <label>E-mail de Login *</label>
                     <input required type="email" value={formData.admin_email} onChange={e => setFormData({ ...formData, admin_email: e.target.value })} />
                   </div>
-                  <div className="form-group">
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label>Senha Provisória * (mín. 8 caracteres)</label>
                     <input required type="password" minLength={8} value={formData.admin_password} onChange={e => setFormData({ ...formData, admin_password: e.target.value })} />
                   </div>
@@ -312,7 +367,7 @@ const RestaurantsManagement = () => {
               <div className="modal-footer">
                 <button type="button" className="cancel-btn" onClick={() => setIsModalOpen(false)}>Cancelar</button>
                 <button type="submit" className="confirm-btn" disabled={submitting}>
-                  {submitting ? 'Criando...' : 'Criar Ecossistema'}
+                  {submitting ? 'Criando...' : <><Plus size={15} /> Criar Ecossistema</>}
                 </button>
               </div>
             </form>
@@ -320,18 +375,18 @@ const RestaurantsManagement = () => {
         </div>
       )}
 
-      {/* Modal Editar */}
+      {/* ── Modal Editar ── */}
       {isEditOpen && (
         <div className="super-modal-overlay" onClick={() => setIsEditOpen(false)}>
-          <div className="super-modal-card" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+          <div className="super-modal-card" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <h3>Editar Restaurante</h3>
                   <p>Atualize os dados cadastrais do estabelecimento.</p>
                 </div>
-                <button className="cancel-btn" style={{ padding: '8px' }} onClick={() => setIsEditOpen(false)}>
-                  <X size={18} />
+                <button className="cancel-btn" style={{ padding: '8px 10px' }} onClick={() => setIsEditOpen(false)}>
+                  <X size={16} />
                 </button>
               </div>
             </div>
@@ -355,7 +410,7 @@ const RestaurantsManagement = () => {
                     <label>Telefone</label>
                     <input type="tel" value={editData.telefone} onChange={e => setEditData({ ...editData, telefone: e.target.value })} />
                   </div>
-                  <div className="form-group">
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label>Status</label>
                     <select value={editData.status} onChange={e => setEditData({ ...editData, status: e.target.value })}>
                       <option value="active">Ativo</option>
@@ -367,179 +422,29 @@ const RestaurantsManagement = () => {
               </div>
               <div className="form-section">
                 <h4>Integração WhatsApp</h4>
-                <div className="form-grid">
-                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                    <label>ID da Inbox no Chatwoot (Uply.chat)</label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 30419 — deixe vazio se ainda não conectado"
-                      value={editData.chatwoot_inbox_id}
-                      onChange={e => setEditData({ ...editData, chatwoot_inbox_id: e.target.value })}
-                    />
-                    <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: 4, display: 'block' }}>
-                      Após o restaurante escanear o QR no Uply.chat, copie o ID da inbox aqui para ativar o chat.
-                    </small>
-                  </div>
+                <div className="form-group">
+                  <label>ID da Inbox no Chatwoot (Uply.chat)</label>
+                  <input
+                    type="number"
+                    placeholder="Ex: 30419 — deixe vazio se ainda não conectado"
+                    value={editData.chatwoot_inbox_id}
+                    onChange={e => setEditData({ ...editData, chatwoot_inbox_id: e.target.value })}
+                  />
+                  <small style={{ color: '#334155', fontSize: '0.73rem', marginTop: 4, display: 'block' }}>
+                    Após o restaurante escanear o QR no Uply.chat, copie o ID da inbox aqui para ativar o chat.
+                  </small>
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="cancel-btn" onClick={() => setIsEditOpen(false)}>Cancelar</button>
                 <button type="submit" className="confirm-btn" disabled={editSubmitting}>
-                  <Save size={16} style={{ marginRight: '6px' }} />
-                  {editSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                  <Save size={14} /> {editSubmitting ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      {/* Tabela */}
-      <div className="super-table-container">
-        <table className="super-table">
-          <thead>
-            <tr>
-              <th>Restaurante</th>
-              <th>Plano</th>
-              <th>Status</th>
-              <th>WhatsApp</th>
-              <th>Usuários</th>
-              <th>Criado em</th>
-              <th className="text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="7" className="loading-cell">Carregando...</td></tr>
-            ) : restaurants.length === 0 ? (
-              <tr><td colSpan="7" className="empty-cell">Nenhum restaurante encontrado.</td></tr>
-            ) : restaurants.map((res) => (
-              <tr key={res.id}>
-                <td>
-                  <div className="res-cell">
-                    <div className="res-logo-mini" style={{ backgroundColor: res.cor_primaria || '#6366f1' }}>
-                      {res.nome.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="res-name-info">
-                      <p className="res-name">{res.nome}</p>
-                      <p className="res-email">{res.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className={`plan-badge ${res.planos?.nome?.toLowerCase() || 'gratuito'}`}>
-                    {res.planos?.nome || 'Sem Plano'}
-                  </span>
-                </td>
-                <td>
-                  <span className={`status-pill ${res.status}`}>
-                    {res.status === 'active' ? 'Ativo' : res.status === 'inactive' ? 'Inativo' : 'Suspenso'}
-                  </span>
-                </td>
-                <td>
-                  {res.chatwoot_inbox_id ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', fontWeight: 700, color: '#25d366' }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#25d366', display: 'inline-block' }} />
-                      Conectado
-                    </span>
-                  ) : (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }} />
-                      Pendente
-                    </span>
-                  )}
-                </td>
-                <td>
-                  <div className="users-stack">
-                    <Users size={16} />
-                    <span>{res.usuarios?.length || 0}</span>
-                  </div>
-                </td>
-                <td>{new Date(res.criado_em).toLocaleDateString('pt-BR')}</td>
-                <td>
-                  <div className="actions-cell">
-                    <button
-                      className={`action-btn ${res.status === 'active' ? 'deactivate' : 'activate'}`}
-                      onClick={() => handleToggleStatus(res.id, res.status)}
-                      title={res.status === 'active' ? 'Desativar' : 'Ativar'}
-                    >
-                      {res.status === 'active' ? <PowerOff size={16} /> : <Power size={16} />}
-                    </button>
-                    <button className="action-btn" title="Editar" onClick={() => openEdit(res)}>
-                      <Edit2 size={16} />
-                    </button>
-                    {MAIN_APP_URL && (
-                      <a
-                        className="action-btn"
-                        title="Ver painel do restaurante"
-                        href={`${MAIN_APP_URL}?impersonate=${res.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <ExternalLink size={16} />
-                      </a>
-                    )}
-                    {/* Dropdown Mais Ações */}
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        className="action-btn"
-                        title="Mais ações"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenDropdownId(openDropdownId === res.id ? null : res.id);
-                        }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {openDropdownId === res.id && (
-                        <div
-                          style={{
-                            position: 'absolute', right: 0, top: '44px', zIndex: 999,
-                            background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: '12px', overflow: 'hidden', minWidth: '180px',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
-                          }}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <button
-                            style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', fontWeight: 600 }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,158,11,0.1)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                            onClick={() => { handleSuspend(res.id); setOpenDropdownId(null); }}
-                          >
-                            <ShieldAlert size={15} /> Suspender Acesso
-                          </button>
-                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-                          <button
-                            style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', fontWeight: 600 }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                            onClick={() => { handleDelete(res.id); setOpenDropdownId(null); }}
-                          >
-                            <Trash2 size={15} /> Excluir Permanentemente
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Paginação */}
-      <div className="super-pagination">
-        <button className="pag-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-          <ChevronLeft size={18} />
-        </button>
-        <span className="pag-info">Página {page} de {totalPages}</span>
-        <button className="pag-btn" disabled={page === totalPages || totalPages === 0} onClick={() => setPage(p => p + 1)}>
-          <ChevronRight size={18} />
-        </button>
-      </div>
     </div>
   );
 };
