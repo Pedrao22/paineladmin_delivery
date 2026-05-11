@@ -187,8 +187,8 @@ const PlansManager = () => {
       {/* Em Desenvolvimento overlay */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 50,
-        backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
-        background: 'rgba(2,6,23,0.55)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        background: 'rgba(2,6,23,0.92)',
         borderRadius: '24px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: '12px',
