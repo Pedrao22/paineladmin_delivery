@@ -9,10 +9,10 @@ import { apiFetch } from '../../lib/supabase';
 import './SuperDashboard.css';
 
 const NAV_ITEMS = [
-  { icon: Store,     color: '#6366f1', bg: 'rgba(99,102,241,0.14)',  label: 'Restaurantes', sub: 'Gerenciar rede', path: '/super/restaurantes' },
-  { icon: BarChart2, color: '#10b981', bg: 'rgba(16,185,129,0.14)',  label: 'Logs de Auditoria', sub: 'Rastrear ações', path: '/super/audit' },
-  { icon: FileText,  color: '#f59e0b', bg: 'rgba(245,158,11,0.14)',  label: 'Planos',       sub: 'Preços e recursos', path: '/super/planos' },
-  { icon: Settings,  color: '#38bdf8', bg: 'rgba(56,189,248,0.14)',  label: 'Configurações', sub: 'Ajustes globais', path: '/super/config' },
+  { icon: Store,     color: '#6366f1', bg: 'rgba(99,102,241,0.14)',  label: 'Restaurantes',     sub: 'Gerenciar rede',    path: '/restaurantes' },
+  { icon: BarChart2, color: '#10b981', bg: 'rgba(16,185,129,0.14)',  label: 'Logs de Auditoria',sub: 'Rastrear ações',    path: '/audit' },
+  { icon: FileText,  color: '#f59e0b', bg: 'rgba(245,158,11,0.14)',  label: 'Planos',           sub: 'Preços e recursos', path: '/planos' },
+  { icon: Settings,  color: '#38bdf8', bg: 'rgba(56,189,248,0.14)',  label: 'Configurações',    sub: 'Ajustes globais',   path: '/config' },
 ];
 
 export default function SuperDashboard() {
