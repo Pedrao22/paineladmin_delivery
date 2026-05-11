@@ -1,166 +1,187 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, DollarSign, ShoppingBag, TrendingUp, 
-  ArrowUpRight, ArrowDownRight, Activity, 
-  Store, ShieldCheck, Zap, Loader2
+import { useNavigate } from 'react-router-dom';
+import {
+  Store, DollarSign, Users, ShieldCheck,
+  Activity, BarChart2, FileText, Settings,
+  CheckCircle2, AlertTriangle, XCircle,
 } from 'lucide-react';
 import { apiFetch } from '../../lib/supabase';
 import './SuperDashboard.css';
 
-const StatCard = ({ title, value, change, icon: Icon, trend, delay, color }) => (
-  <div className="super-stat-card fade-in-up" style={{ animationDelay: `${delay}ms` }}>
-    <div className="super-stat-header">
-      <div className={`super-stat-icon-bg ${color}`}>
-        <Icon size={28} />
-      </div>
-      <div className={`super-stat-trend ${trend}`}>
-        {trend === 'up' ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-        <span>{change}</span>
-      </div>
-    </div>
-    <div className="super-stat-info">
-      <p className="stat-label">{title}</p>
-      <h2 className="stat-value">{value}</h2>
-      <div className="stat-progress-bar">
-        <div className="progress-fill" style={{ width: '85%', background: `var(--accent-gradient)` }}></div>
-      </div>
-    </div>
-  </div>
-);
+const NAV_ITEMS = [
+  { icon: Store,     color: '#6366f1', bg: 'rgba(99,102,241,0.14)',  label: 'Restaurantes', sub: 'Gerenciar rede', path: '/super/restaurantes' },
+  { icon: BarChart2, color: '#10b981', bg: 'rgba(16,185,129,0.14)',  label: 'Logs de Auditoria', sub: 'Rastrear ações', path: '/super/audit' },
+  { icon: FileText,  color: '#f59e0b', bg: 'rgba(245,158,11,0.14)',  label: 'Planos',       sub: 'Preços e recursos', path: '/super/planos' },
+  { icon: Settings,  color: '#38bdf8', bg: 'rgba(56,189,248,0.14)',  label: 'Configurações', sub: 'Ajustes globais', path: '/super/config' },
+];
 
 export default function SuperDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    async function loadStats() {
-      try {
-        const res = await apiFetch('/restaurants/stats');
-        if (res.success) setStats(res.data);
-      } catch (err) {
-        console.error('Erro ao carregar stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadStats();
+    apiFetch('/restaurants/stats')
+      .then(res => { if (res?.success) setStats(res.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div className="super-dashboard-loading">
-        <div className="relative w-16 h-16 mb-4">
-           <div className="absolute inset-0 border-4 border-emerald-500/20 rounded-full"></div>
-           <div className="absolute inset-0 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-        <p className="animate-pulse">Sincronizando Telemetria Master...</p>
+      <div className="sdb-loading">
+        <div className="sdb-spinner" />
+        <p>Carregando telemetria...</p>
       </div>
     );
   }
 
-  return (
-    <div className="super-dashboard-container">
-      <header className="super-welcome-header">
-        <div className="welcome-text">
-          <h1>Central <span className="text-gradient">CEO</span></h1>
-          <p>Status global e telemetria financeira da rede Pedi&Recebe</p>
-        </div>
-        <div className="header-actions">
-          <div className="live-indicator">
-            <span className="dot"></span>
-            REDE ESTÁVEL
-          </div>
-          <button className="super-btn-primary">
-            <Zap size={20} /> Relatório Financeiro
-          </button>
-        </div>
-      </header>
+  const total    = stats?.total    ?? 0;
+  const ativos   = stats?.ativos   ?? 0;
+  const inativos = stats?.inativos ?? 0;
+  const suspensos= stats?.suspensos?? 0;
+  const usuarios = stats?.total_usuarios ?? 0;
+  const mrr      = stats?.mrr ?? 0;
 
-      <div className="super-stats-grid">
-        <StatCard 
-          title="Ecossistemas Ativos" 
-          value={stats?.total || 0} 
-          change="+100%" 
-          icon={Store} 
-          trend="up" 
-          delay={100}
-          color="indigo"
-        />
-        <StatCard
-          title="MRR (Receita Recorrente)"
-          value={stats?.mrr ? `R$ ${Number(stats.mrr).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}
-          change={stats?.mrr ? '+ativo' : 'configure planos'}
-          icon={DollarSign}
-          trend="up"
-          delay={200}
-          color="gold"
-        />
-        <StatCard
-          title="Usuários Cadastrados"
-          value={stats?.total_usuarios ?? (stats?.total || 0)}
-          change="na rede"
-          icon={Users}
-          trend="up"
-          delay={300}
-          color="blue"
-        />
-        <StatCard 
-          title="Saúde do Servidor" 
-          value="99.9%" 
-          change="UPTIME" 
-          icon={ShieldCheck} 
-          trend="up" 
-          delay={400}
-          color="green"
-        />
+  const pct = (n) => total > 0 ? Math.round((n / total) * 100) : 0;
+
+  const STATS = [
+    {
+      icon: Store,       cls: 'blue',
+      label: 'Total na rede', value: total,
+      sub: 'estabelecimentos cadastrados',
+      sg: 'radial-gradient(ellipse at top left, rgba(59,130,246,0.07), transparent 65%)',
+    },
+    {
+      icon: CheckCircle2, cls: 'green',
+      label: 'Ativos',   value: ativos,
+      sub: `${pct(ativos)}% da rede operando`,
+      sg: 'radial-gradient(ellipse at top left, rgba(34,197,94,0.07), transparent 65%)',
+    },
+    {
+      icon: DollarSign,  cls: 'gold',
+      label: 'MRR',
+      value: mrr > 0
+        ? `R$ ${Number(mrr).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        : '—',
+      sub: 'receita recorrente mensal',
+      sg: 'radial-gradient(ellipse at top left, rgba(245,158,11,0.07), transparent 65%)',
+    },
+    {
+      icon: Users,       cls: 'indigo',
+      label: 'Usuários', value: usuarios,
+      sub: 'admins ativos na rede',
+      sg: 'radial-gradient(ellipse at top left, rgba(99,102,241,0.07), transparent 65%)',
+    },
+  ];
+
+  return (
+    <div className="sdb-container">
+
+      {/* Header */}
+      <div className="sdb-header">
+        <div className="sdb-header-left">
+          <h1>Visão <span>Geral</span></h1>
+          <p>Telemetria e status global da rede Pedi&amp;Recebe</p>
+        </div>
+        <div className="sdb-live">
+          <span className="sdb-live-dot" />
+          REDE ESTÁVEL
+        </div>
       </div>
 
-      <div className="super-main-grid">
-        <section className="glass-section activity-section">
-          <div className="section-header">
-            <h3><Activity size={22} className="text-emerald-400" /> Eventos do Sistema</h3>
-            <span className="pulse-dot"></span>
+      {/* Stats */}
+      <div className="sdb-stats">
+        {STATS.map(({ icon: Icon, cls, label, value, sub, sg }) => (
+          <div key={label} className="sdb-stat" style={{ '--sg': sg }}>
+            <div className={`sdb-stat-icon ${cls}`}><Icon size={19} /></div>
+            <p className="sdb-stat-label">{label}</p>
+            <p className="sdb-stat-value">{value}</p>
+            <p className="sdb-stat-sub">{sub}</p>
           </div>
-          <div className="activity-feed">
-            {stats?.total > 0 ? (
-              <div className="activity-item-premium">
-                <div className="activity-icon-container">
-                  <Zap size={24} />
-                </div>
-                <div className="activity-content">
-                  <p><strong>Nó Matriz</strong> inicializado com estabilidade plena.</p>
-                  <span>Módulo: Infraestrutura Automática</span>
-                </div>
-                <div className="activity-status">Saudável</div>
-              </div>
-            ) : (
-              <div className="activity-item-premium opacity-50">
-                 <p>Aguardando tráfego e telemetria da rede principal...</p>
-              </div>
-            )}
-          </div>
-        </section>
+        ))}
+      </div>
 
-        <section className="glass-section shortcuts-section">
-          <div className="section-header">
-            <h3>Central de Ações Rápidas</h3>
+      {/* Bottom grid */}
+      <div className="sdb-grid">
+
+        {/* Network breakdown */}
+        <div className="sdb-card">
+          <div className="sdb-card-head">
+            <h3><Activity size={15} color="#6366f1" /> Distribuição da Rede</h3>
           </div>
-          <div className="shortcut-grid">
-            <div className="shortcut-card group">
-              <TrendingUp size={28} className="text-purple-400 group-hover:text-white transition-colors" />
-              <span>Análise de Crescimento</span>
+          <div className="sdb-card-body">
+            <div className="sdb-breakdown">
+              <div className="sdb-bar-row">
+                <div className="sdb-bar-label">
+                  <span><CheckCircle2 size={12} color="#4ade80" /> Ativos</span>
+                  <span>{ativos}</span>
+                </div>
+                <div className="sdb-bar-track">
+                  <div className="sdb-bar-fill" style={{ width: `${pct(ativos)}%`, background: '#4ade80' }} />
+                </div>
+              </div>
+
+              <div className="sdb-bar-row">
+                <div className="sdb-bar-label">
+                  <span><AlertTriangle size={12} color="#fbbf24" /> Inativos</span>
+                  <span>{inativos}</span>
+                </div>
+                <div className="sdb-bar-track">
+                  <div className="sdb-bar-fill" style={{ width: `${pct(inativos)}%`, background: '#fbbf24' }} />
+                </div>
+              </div>
+
+              <div className="sdb-bar-row">
+                <div className="sdb-bar-label">
+                  <span><XCircle size={12} color="#f87171" /> Suspensos</span>
+                  <span>{suspensos}</span>
+                </div>
+                <div className="sdb-bar-track">
+                  <div className="sdb-bar-fill" style={{ width: `${pct(suspensos)}%`, background: '#f87171' }} />
+                </div>
+              </div>
+
+              <div className="sdb-divider" />
+
+              <div className="sdb-net-total">
+                <span>Total cadastrado</span>
+                <span>{total}</span>
+              </div>
             </div>
-            <div className="shortcut-card group">
-              <ShieldCheck size={28} className="text-emerald-400 group-hover:text-white transition-colors" />
-              <span>Painel de Segurança</span>
+
+            <div className="sdb-status-banner">
+              <div className="sdb-status-banner-icon"><ShieldCheck size={17} /></div>
+              <div>
+                <p>Infraestrutura operacional</p>
+                <span>Backend Render · Banco Supabase · Deploy automático</span>
+              </div>
             </div>
           </div>
-          
-          <div className="promo-banner-premium mt-8">
-            <h4>Ecossistema Protegido</h4>
-            <p>Os nós do servidor Pedi&Recebe estão rodando em contêineres otimizados e com backup ativo.</p>
+        </div>
+
+        {/* Quick nav */}
+        <div className="sdb-card">
+          <div className="sdb-card-head">
+            <h3>Acesso Rápido</h3>
           </div>
-        </section>
+          <div className="sdb-card-body">
+            <div className="sdb-nav-grid">
+              {NAV_ITEMS.map(({ icon: Icon, color, bg, label, sub, path }) => (
+                <div key={label} className="sdb-nav-item" onClick={() => navigate(path)}>
+                  <div className="sdb-nav-icon" style={{ background: bg, color }}>
+                    <Icon size={17} />
+                  </div>
+                  <div>
+                    <div className="sdb-nav-label">{label}</div>
+                    <div className="sdb-nav-sub">{sub}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
