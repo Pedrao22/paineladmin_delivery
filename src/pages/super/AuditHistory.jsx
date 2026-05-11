@@ -116,9 +116,9 @@ const AuditHistory = () => {
       if (filters.dataInicio) params.append('data_inicio', filters.dataInicio);
       if (filters.dataFim) params.append('data_fim', filters.dataFim + 'T23:59:59');
       const res = await apiFetch(`/audit?${params}`);
-      const raw = res?.data?.data ?? res?.data ?? [];
-      const list = Array.isArray(raw) ? raw : [];
-      const count = res?.data?.total ?? res?.total ?? list.length;
+      const payload = res?.data ?? res;
+      const list = Array.isArray(payload?.data) ? payload.data : [];
+      const count = payload?.total ?? list.length;
       setLogs(list);
       setTotal(count);
       setActionCounts({
