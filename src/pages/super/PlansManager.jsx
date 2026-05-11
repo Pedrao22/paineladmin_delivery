@@ -183,6 +183,32 @@ const PlansManager = () => {
 
   // ─── RENDER ───────────────────────────────────
   return (
+    <div style={{ position: 'relative' }}>
+      {/* Em Desenvolvimento overlay */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 50,
+        backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+        background: 'rgba(2,6,23,0.55)',
+        borderRadius: '24px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: '12px',
+        pointerEvents: 'all',
+      }}>
+        <div style={{
+          padding: '14px 28px', borderRadius: '16px',
+          background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.35)',
+          display: 'flex', alignItems: 'center', gap: '10px',
+        }}>
+          <span style={{ fontSize: '1.4rem' }}>🚧</span>
+          <span style={{ color: '#c084fc', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '0.04em' }}>
+            Em Desenvolvimento
+          </span>
+        </div>
+        <p style={{ color: '#64748b', fontSize: '0.85rem', margin: 0 }}>
+          Esta seção estará disponível em breve.
+        </p>
+      </div>
+
     <div className="space-y-8 animate-fadeIn">
       <Toast toast={toast} />
 
@@ -593,6 +619,7 @@ const PlansManager = () => {
           )}
         </div>
       )}
+    </div>
     </div>
   );
 };
