@@ -1,3 +1,18 @@
+:root {
+  --bg-primary:       #03030a;
+  --bg-glow:          radial-gradient(circle at 30% 30%, rgba(99,102,241,0.18) 0%, transparent 50%),
+                      radial-gradient(circle at 70% 70%, rgba(168,85,247,0.13) 0%, transparent 50%);
+  --glass-bg:         rgba(18, 18, 30, 0.72);
+  --glass-border:     rgba(255, 255, 255, 0.06);
+  --glass-glow:       0 30px 60px -15px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+  --accent:           #6366f1;
+  --accent-gradient:  linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  --text-primary:     #f1f5f9;
+  --text-secondary:   #94a3b8;
+  --text-tertiary:    #64748b;
+  --font-family:      'Outfit', system-ui, sans-serif;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
