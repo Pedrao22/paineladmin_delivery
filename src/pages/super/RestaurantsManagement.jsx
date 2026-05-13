@@ -80,17 +80,21 @@ const RestaurantsManagement = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const statsRes = await apiFetch('/restaurants/stats');
-      if (statsRes?.success) setStats(statsRes.data);
-
       const params = new URLSearchParams({ page, limit: 12 });
       if (filter !== 'all') params.append('status', filter);
       if (debouncedSearch) params.append('search', debouncedSearch);
 
-      const listRes = await apiFetch(`/restaurants?${params}`);
-      if (listRes?.success) {
-        setRestaurants(listRes.data.data);
-        setTotalPages(listRes.data.totalPages);
+      const [statsRes, listRes] = await Promise.allSettled([
+        apiFetch('/restaurants/stats'),
+        apiFetch(`/restaurants?${params}`),
+      ]);
+
+      if (statsRes.status === 'fulfilled' && statsRes.value?.success) {
+        setStats(statsRes.value.data);
+      }
+      if (listRes.status === 'fulfilled' && listRes.value?.success) {
+        setRestaurants(listRes.value.data.data ?? []);
+        setTotalPages(listRes.value.data.totalPages ?? 1);
       }
     } catch (err) {
       console.error('Erro ao buscar restaurantes:', err);
