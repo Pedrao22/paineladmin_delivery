@@ -42,6 +42,9 @@ export async function apiFetch(path, options = {}) {
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        supabase.auth.signOut();
+      }
       throw new Error(data.message || 'Erro na requisição');
     }
 
