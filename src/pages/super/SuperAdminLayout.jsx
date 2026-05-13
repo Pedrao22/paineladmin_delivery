@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   BarChart3, Store, CreditCard, History,
-  Settings, LogOut, ShieldCheck, ChevronRight
+  Settings, LogOut, ShieldCheck, ChevronRight, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './SuperAdminLayout.css';
@@ -22,6 +22,7 @@ const SuperAdminLayout = () => {
     { icon: <Store size={20} />,    label: 'Restaurantes',           path: '/restaurantes' },
     { icon: <CreditCard size={20} />, label: 'Planos & Assinaturas', path: '/planos' },
     { icon: <History size={20} />,  label: 'Logs de Auditoria',      path: '/audit' },
+    { icon: <MessageSquare size={20} />, label: 'Feedback',          path: '/feedback' },
     { icon: <Settings size={20} />, label: 'Configurações Globais',  path: '/config' },
   ];
 

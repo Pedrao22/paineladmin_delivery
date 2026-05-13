@@ -6,6 +6,7 @@ import RestaurantsManagement from './pages/super/RestaurantsManagement';
 import PlansManager from './pages/super/PlansManager';
 import AuditHistory from './pages/super/AuditHistory';
 import GlobalSettings from './pages/super/GlobalSettings';
+import FeedbackPage from './pages/super/FeedbackPage';
 import SuperLoginPage from './pages/super/SuperLoginPage';
 import SuperPasswordReset from './pages/super/SuperPasswordReset';
 
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="restaurantes" element={<RestaurantsManagement />} />
         <Route path="planos" element={<PlansManager />} />
         <Route path="audit" element={<AuditHistory />} />
+        <Route path="feedback" element={<FeedbackPage />} />
         <Route path="config" element={<GlobalSettings />} />
       </Route>
 
