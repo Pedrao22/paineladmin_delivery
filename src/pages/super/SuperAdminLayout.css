@@ -1,10 +1,10 @@
 .super-layout {
   display: flex;
   min-height: 100vh;
-  background: #03030a;
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15), transparent 30%),
-    radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.12), transparent 30%);
+  background: #000000;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.07), transparent 30%),
+    radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.05), transparent 30%);
   color: #f1f5f9;
   font-family: var(--font-family, 'Inter', sans-serif);
   -webkit-font-smoothing: antialiased;
@@ -13,7 +13,7 @@
 /* Premium Floating Sidebar */
 .super-sidebar {
   width: 280px;
-  background: rgba(15, 15, 25, 0.6);
+  background: rgba(12, 12, 12, 0.75);
   backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
@@ -134,7 +134,7 @@
 .super-sidebar-footer {
   padding: 24px 20px;
   margin-top: auto;
-  background: linear-gradient(to top, rgba(15, 15, 25, 0.9) 0%, transparent 100%);
+  background: linear-gradient(to top, rgba(8, 8, 8, 0.95) 0%, transparent 100%);
   border-radius: 0 0 32px 32px;
 }
 
@@ -249,7 +249,7 @@
 .header-blur-bg {
   position: absolute;
   inset: 0;
-  background: rgba(3, 3, 10, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(24px) invert(0%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   z-index: -1;
@@ -286,7 +286,7 @@
 
 /* Premium Utility Classes */
 .glass-card {
-  background: rgba(20, 20, 30, 0.5);
+  background: rgba(14, 14, 14, 0.6);
   backdrop-filter: blur(24px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 32px;
@@ -306,7 +306,7 @@
 }
 
 .stats-card {
-  background: linear-gradient(145deg, rgba(30, 30, 45, 0.7) 0%, rgba(15, 15, 25, 0.9) 100%);
+  background: linear-gradient(145deg, rgba(18, 18, 18, 0.8) 0%, rgba(8, 8, 8, 0.95) 100%);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 28px;
