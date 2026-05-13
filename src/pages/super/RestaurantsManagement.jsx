@@ -92,12 +92,20 @@ const RestaurantsManagement = () => {
       if (statsRes.status === 'fulfilled' && statsRes.value?.success) {
         setStats(statsRes.value.data);
       }
+
       if (listRes.status === 'fulfilled' && listRes.value?.success) {
-        setRestaurants(listRes.value.data.data ?? []);
-        setTotalPages(listRes.value.data.totalPages ?? 1);
+        const rows = listRes.value.data?.data ?? [];
+        console.log(`[fetchData] OK — ${rows.length} restaurante(s) | total=${listRes.value.data?.total} | page=${page}`);
+        setRestaurants(rows);
+        setTotalPages(listRes.value.data?.totalPages ?? 1);
+      } else if (listRes.status === 'rejected') {
+        console.error('[fetchData] /restaurants falhou:', listRes.reason?.message || listRes.reason);
+        // Mantém lista antiga — não limpa estado para não perder o que já foi carregado
+      } else {
+        console.warn('[fetchData] /restaurants resposta inesperada:', listRes.value);
       }
     } catch (err) {
-      console.error('Erro ao buscar restaurantes:', err);
+      console.error('[fetchData] erro inesperado:', err);
     } finally {
       setLoading(false);
     }
