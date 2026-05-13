@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Bug, Lightbulb, RefreshCw, Loader2 } from 'lucide-react';
+import { MessageSquare, Bug, Lightbulb, RefreshCw, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { apiFetch } from '../../lib/supabase';
 
 const TIPO_CONFIG = {
@@ -25,6 +25,7 @@ export default function FeedbackPage() {
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [actionLoading, setActionLoading] = useState(null); // feedback id being actioned
 
   const loadFeedbacks = async (f = filter, p = page) => {
     setLoading(true);
@@ -46,6 +47,23 @@ export default function FeedbackPage() {
   useEffect(() => { loadFeedbacks(filter, page); }, [filter, page]); // eslint-disable-line
 
   const handleFilter = (f) => { setFilter(f); setPage(1); };
+
+  const handleResolve = async (id, resolvido) => {
+    setActionLoading(id);
+    try {
+      const res = await apiFetch(`/restaurants/feedbacks/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ resolvido }),
+      });
+      if (res?.success) {
+        setFeedbacks(prev => prev.map(fb => fb.id === id ? { ...fb, resolvido, respondido_em: new Date().toISOString() } : fb));
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar feedback:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <div style={{ padding: '0 0 40px' }}>
@@ -147,9 +165,51 @@ export default function FeedbackPage() {
                     {timeAgo(fb.criado_em)}
                   </span>
                 </div>
-                <p style={{ margin: 0, color: 'var(--text-primary, #fff)', fontSize: '0.9rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                <p style={{ margin: '0 0 12px', color: 'var(--text-primary, #fff)', fontSize: '0.9rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                   {fb.mensagem}
                 </p>
+
+                {/* Resolution actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {fb.respondido_em && (
+                    <span style={{
+                      fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', marginRight: 4,
+                    }}>
+                      Respondido {timeAgo(fb.respondido_em)} ·
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handleResolve(fb.id, true)}
+                    disabled={actionLoading === fb.id || fb.resolvido === true}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '5px 12px', borderRadius: 8, border: 'none', cursor: actionLoading === fb.id || fb.resolvido === true ? 'not-allowed' : 'pointer',
+                      fontSize: '0.78rem', fontWeight: 700, transition: 'all 0.15s',
+                      background: fb.resolvido === true ? 'rgba(46,125,50,0.25)' : 'rgba(46,125,50,0.12)',
+                      color: fb.resolvido === true ? '#81c784' : '#66bb6a',
+                      opacity: actionLoading === fb.id ? 0.6 : 1,
+                    }}
+                  >
+                    {actionLoading === fb.id ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : <CheckCircle size={12} />}
+                    Resolvido
+                  </button>
+                  <button
+                    onClick={() => handleResolve(fb.id, false)}
+                    disabled={actionLoading === fb.id || fb.resolvido === false}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '5px 12px', borderRadius: 8, border: 'none', cursor: actionLoading === fb.id || fb.resolvido === false ? 'not-allowed' : 'pointer',
+                      fontSize: '0.78rem', fontWeight: 700, transition: 'all 0.15s',
+                      background: fb.resolvido === false && fb.respondido_em ? 'rgba(198,40,40,0.25)' : 'rgba(198,40,40,0.1)',
+                      color: fb.resolvido === false && fb.respondido_em ? '#ef9a9a' : '#e57373',
+                      opacity: actionLoading === fb.id ? 0.6 : 1,
+                    }}
+                  >
+                    {actionLoading === fb.id ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : <XCircle size={12} />}
+                    Não resolvido
+                  </button>
+                </div>
+
                 {Array.isArray(fb.imagens) && fb.imagens.length > 0 && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                     {fb.imagens.map((src, i) => (
