@@ -150,6 +150,19 @@ export default function FeedbackPage() {
                 <p style={{ margin: 0, color: 'var(--text-primary, #fff)', fontSize: '0.9rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                   {fb.mensagem}
                 </p>
+                {Array.isArray(fb.imagens) && fb.imagens.length > 0 && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                    {fb.imagens.map((src, i) => (
+                      <a key={i} href={src} target="_blank" rel="noreferrer">
+                        <img
+                          src={src}
+                          alt={`screenshot ${i + 1}`}
+                          style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', cursor: 'zoom-in' }}
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
