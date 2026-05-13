@@ -26,7 +26,7 @@ export default function FeedbackPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
-  const fetch = async (f = filter, p = page) => {
+  const loadFeedbacks = async (f = filter, p = page) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(p) });
@@ -43,7 +43,7 @@ export default function FeedbackPage() {
     }
   };
 
-  useEffect(() => { fetch(filter, page); }, [filter, page]); // eslint-disable-line
+  useEffect(() => { loadFeedbacks(filter, page); }, [filter, page]); // eslint-disable-line
 
   const handleFilter = (f) => { setFilter(f); setPage(1); };
 
@@ -60,7 +60,7 @@ export default function FeedbackPage() {
           </p>
         </div>
         <button
-          onClick={() => fetch(filter, page)}
+          onClick={() => loadFeedbacks(filter, page)}
           style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
