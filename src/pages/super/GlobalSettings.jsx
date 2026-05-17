@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Settings, Save, Globe, Percent, ShieldAlert, Mail,
+  Settings, Save, Globe, ShieldAlert, Mail,
   CheckCircle2, Loader2, Power, PowerOff, Info,
   Calendar, Activity,
 } from 'lucide-react';
@@ -155,33 +155,6 @@ const GlobalSettings = () => {
             </div>
           </div>
 
-          {/* Financeiro */}
-          <div style={S.card}>
-            <div style={S.cardHead}>
-              <div style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Percent size={15} color="#fbbf24" />
-              </div>
-              <p style={S.cardTitle}>Parâmetros Financeiros</p>
-            </div>
-            <div style={S.cardBody}>
-              <div style={S.fieldGrid}>
-                <ConfigFieldNumber
-                  label="Taxa de Marketplace (%)"
-                  suffix="%"
-                  defaultValue={findValue('marketplace_fee')}
-                  onSave={(v) => handleUpdate('marketplace_fee', parseFloat(v))}
-                  saving={savingKey === 'marketplace_fee'}
-                />
-                <ConfigFieldNumber
-                  label="Período de Trial (dias)"
-                  suffix="dias"
-                  defaultValue={findValue('trial_days')}
-                  onSave={(v) => handleUpdate('trial_days', parseInt(v))}
-                  saving={savingKey === 'trial_days'}
-                />
-              </div>
-            </div>
-          </div>
 
         </div>
 
@@ -304,34 +277,5 @@ function ConfigField({ label, icon, defaultValue, placeholder, type = 'text', on
   );
 }
 
-function ConfigFieldNumber({ label, suffix, defaultValue, onSave, saving }) {
-  const [value, setValue] = useState(defaultValue ?? '');
-  const [focused, setFocused] = useState(false);
-  useEffect(() => { setValue(defaultValue ?? ''); }, [defaultValue]);
-
-  return (
-    <div style={S.fieldWrap}>
-      <label style={S.label}>{label}</label>
-      <div style={S.inputWrap}>
-        <input
-          type="number" min="0" step="any"
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          onBlur={() => { setFocused(false); if (String(value) !== String(defaultValue)) onSave(value); }}
-          onFocus={() => setFocused(true)}
-          style={{
-            ...S.inputNum,
-            borderColor: focused ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.08)',
-            boxShadow: focused ? '0 0 0 3px rgba(245,158,11,0.1)' : 'none',
-          }}
-        />
-        <span style={S.inputSuffix}>
-          {saving && <Loader2 size={12} color="#fbbf24" style={{ animation: 'spin 0.75s linear infinite' }} />}
-          {suffix}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 export default GlobalSettings;
