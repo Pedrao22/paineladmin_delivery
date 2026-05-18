@@ -13,6 +13,7 @@ const MAIN_APP_URL = import.meta.env.VITE_MAIN_APP_URL || '';
 const EMPTY_FORM = {
   nome: '', cnpj: '', email: '', telefone: '',
   admin_nome: '', admin_email: '', admin_password: '', plano_id: '',
+  trial: true, trial_days: '',
 };
 const EMPTY_EDIT = { nome: '', cnpj: '', email: '', telefone: '', status: 'active', chatwoot_inbox_id: '' };
 
@@ -115,7 +116,12 @@ const RestaurantsManagement = () => {
     e.preventDefault();
     setSubmitting(true); setFormError('');
     try {
-      const res = await apiFetch('/restaurants', { method: 'POST', body: JSON.stringify(formData) });
+      const payload = {
+        ...formData,
+        skip_trial: !formData.trial,
+        trial_days: formData.trial && formData.trial_days ? parseInt(formData.trial_days, 10) : undefined,
+      };
+      const res = await apiFetch('/restaurants', { method: 'POST', body: JSON.stringify(payload) });
       if (res?.success) { setIsModalOpen(false); setFormData(EMPTY_FORM); fetchData(); }
       else setFormError(res?.message || 'Erro ao criar restaurante.');
     } catch (err) { setFormError(err.message); }
@@ -400,6 +406,41 @@ const RestaurantsManagement = () => {
                   </div>
                 </div>
               </div>
+
+              <div className="form-section">
+                <h4>Período de Testes</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.trial}
+                      onChange={e => setFormData({ ...formData, trial: e.target.checked })}
+                      style={{ width: 16, height: 16, accentColor: '#f59e0b', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '0.87rem', color: '#cbd5e1', fontWeight: 600 }}>
+                      Ativar período de testes
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 400 }}>
+                      (acesso bloqueado após vencer)
+                    </span>
+                  </label>
+
+                  {formData.trial && (
+                    <div className="form-group" style={{ maxWidth: 220 }}>
+                      <label>Dias de trial <span style={{ color: '#475569', fontWeight: 400 }}>(em branco = padrão do sistema)</span></label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="365"
+                        placeholder="Ex: 7 ou 15"
+                        value={formData.trial_days}
+                        onChange={e => setFormData({ ...formData, trial_days: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="form-section">
                 <h4>Acesso Administrativo</h4>
                 <div className="form-grid">
