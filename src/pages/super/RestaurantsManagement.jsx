@@ -3,7 +3,7 @@ import {
   Plus, Search, Power, PowerOff, Edit2, ExternalLink,
   ChevronLeft, ChevronRight, Activity, X, Trash2, ShieldAlert,
   Save, Store, CheckCircle2, AlertTriangle, Zap, Calendar,
-  MessageSquare, MoreVertical, Globe,
+  MessageSquare, MoreVertical, Globe, Clock, Unlock,
 } from 'lucide-react';
 import { apiFetch } from '../../lib/supabase';
 import './RestaurantsManagement.css';
@@ -148,6 +148,29 @@ const RestaurantsManagement = () => {
     } catch {}
   };
 
+  const handleActivate = async (id) => {
+    if (!window.confirm('Ativar este restaurante? O trial será removido e o acesso liberado permanentemente.')) return;
+    try {
+      const res = await apiFetch(`/restaurants/${id}/activate`, { method: 'PATCH' });
+      if (res?.success) fetchData();
+    } catch {}
+  };
+
+  const handleExtendTrial = async (id) => {
+    const days = parseInt(window.prompt('Quantos dias deseja adicionar ao trial?', '7') || '0', 10);
+    if (!days || days < 1) return;
+    try {
+      const res = await apiFetch(`/restaurants/${id}/extend-trial`, { method: 'PATCH', body: JSON.stringify({ days }) });
+      if (res?.success) fetchData();
+    } catch {}
+  };
+
+  const getTrialInfo = (r) => {
+    if (!r.trial_ends_at) return null;
+    const daysLeft = Math.ceil((new Date(r.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24));
+    return { expired: daysLeft < 0, daysLeft: Math.max(0, daysLeft) };
+  };
+
   const openEdit = (res) => {
     setEditingId(res.id);
     setEditData({ nome: res.nome || '', cnpj: res.cnpj || '', email: res.email || '', telefone: res.telefone || '', status: res.status || 'active', chatwoot_inbox_id: res.chatwoot_inbox_id ?? '' });
@@ -257,6 +280,13 @@ const RestaurantsManagement = () => {
                   ) : (
                     <span className="rc-wa pending"><MessageSquare size={10} />Pendente</span>
                   )}
+                  {(() => {
+                    const trial = getTrialInfo(res);
+                    if (!trial) return null;
+                    return trial.expired
+                      ? <span className="rc-trial expired"><Clock size={10} />Trial expirado</span>
+                      : <span className="rc-trial active"><Clock size={10} />{trial.daysLeft}d de trial</span>;
+                  })()}
                 </div>
 
                 <div className="res-card-meta">
@@ -291,6 +321,17 @@ const RestaurantsManagement = () => {
                     </button>
                     {openDropdownId === res.id && (
                       <div className="rca-dropdown-menu" onClick={e => e.stopPropagation()}>
+                        {res.trial_ends_at && (
+                          <>
+                            <button className="rca-dropdown-item success" onClick={() => { handleActivate(res.id); setOpenDropdownId(null); }}>
+                              <Unlock size={14} /> Ativar (remover trial)
+                            </button>
+                            <button className="rca-dropdown-item warn" onClick={() => { handleExtendTrial(res.id); setOpenDropdownId(null); }}>
+                              <Clock size={14} /> Estender trial
+                            </button>
+                            <div className="rca-dropdown-divider" />
+                          </>
+                        )}
                         <button className="rca-dropdown-item warn" onClick={() => { handleSuspend(res.id); setOpenDropdownId(null); }}>
                           <ShieldAlert size={14} /> Suspender acesso
                         </button>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Settings, Save, Globe, ShieldAlert, Mail,
   CheckCircle2, Loader2, Power, PowerOff, Info,
-  Calendar, Activity,
+  Calendar, Activity, Clock,
 } from 'lucide-react';
 import { apiFetch } from '../../lib/supabase';
 
@@ -155,6 +155,35 @@ const GlobalSettings = () => {
             </div>
           </div>
 
+
+          {/* Trial */}
+          <div style={S.card}>
+            <div style={S.cardHead}>
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Clock size={15} color="#fbbf24" />
+              </div>
+              <p style={S.cardTitle}>Período de Testes (Trial)</p>
+            </div>
+            <div style={S.cardBody}>
+              <p style={{ fontSize: '0.77rem', color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                Dias gratuitos concedidos automaticamente a cada novo restaurante cadastrado. Após o vencimento, o painel é bloqueado até o super admin ativar o restaurante.
+              </p>
+              <div style={S.fieldGrid}>
+                <ConfigField
+                  label="Dias de Trial"
+                  icon={<Clock size={14} />}
+                  defaultValue={findValue('trial_days') || '7'}
+                  placeholder="7"
+                  type="number"
+                  onSave={(v) => handleUpdate('trial_days', String(Math.max(1, parseInt(v, 10) || 7)))}
+                  saving={savingKey === 'trial_days'}
+                />
+              </div>
+              <div style={{ padding: '10px 14px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 12, fontSize: '0.74rem', color: '#92400e', lineHeight: 1.5 }}>
+                ⚠️ Afeta apenas restaurantes criados a partir de agora. Para ajustar individualmente, use a página de Restaurantes.
+              </div>
+            </div>
+          </div>
 
         </div>
 
